@@ -1,0 +1,10 @@
+LINKEDIN_CLIENT_ID=your_client_id_here
+LINKEDIN_CLIENT_SECRET=your_client_secret_here
+LINKEDIN_REDIRECT_URI=http://localhost:8080/callback
+LINKEDIN_ACCESS_TOKEN=your_access_token_here
+LINKEDIN_PERSON_URN=urn:li:person:your_id_here
+
+GEMINI_API_KEY=your_gemini_api_key_here
+
+TELEGRAM_BOT_TOKEN=your_bot_token_here
+TELEGRAM_CHAT_ID=your_chat_id_here
