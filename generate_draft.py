@@ -79,40 +79,30 @@ def generate_post(topic):
                 model='gemini-3.8-flash',
                 contents=prompt,
             )
-            # Robustly extract text
-            text = None
-            if response.text:
-                text = response.text.strip()
-            elif response.candidates:
-                parts = response.candidates[0].content.parts
-                text = "".join(p.text for p in parts if hasattr(p, "text") and p.text).strip()
-
-            if not text or text.upper() == "NONE":
-                raise ValueError("Model returned empty or NONE")
-
-            return text
-
+            ...
         except Exception as e:
             error_str = str(e)
-
-            # Retryable errors (rate limit / overload)
             if any(k in error_str for k in ("429", "RESOURCE_EXHAUSTED", "503", "UNAVAILABLE")):
                 wait = 15 * (attempt + 1)
                 print(f"Model busy or quota hit, waiting {wait}s before retry...")
                 time.sleep(wait)
-                continue  # move to next attempt
-
-            # Empty/NONE output: retry once, then give up
-            if isinstance(e, ValueError):
-                print(f"Empty model output on attempt {attempt + 1}, retrying...")
-                time.sleep(5)
                 continue
+            ...
 
-            # Any other error: re-raise immediately
-            raise
+    # Final fallback: try a lighter model once
+    print("Primary model unavailable, trying gemini-3.5-flash-lite...")
+    try:
+        response = client.models.generate_content(
+            model='gemini-3.5-flash-lite',
+            contents=prompt,
+        )
+        text = response.text.strip() if response.text else None
+        if text:
+            return text
+    except Exception as e:
+        print(f"Lite model also failed: {e}")
 
-    # All attempts exhausted — return None so caller can handle gracefully
-    print("Generation failed after 3 attempts.")
+    print("Generation failed after all attempts.")
     return None
 
 async def send_draft_for_approval(text):
@@ -121,6 +111,9 @@ async def send_draft_for_approval(text):
         [
             InlineKeyboardButton("✅ Publish", callback_data="approve"),
             InlineKeyboardButton("❌ Discard", callback_data="reject"),
+        ],
+        [
+            InlineKeyboardButton("🔄 Regenerate", callback_data="regenerate"),
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)

@@ -1,8 +1,12 @@
 import os
+import subprocess
+import sys
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CallbackQueryHandler, ContextTypes
 from dotenv import load_dotenv
 import requests
+
+
 
 load_dotenv()
 
@@ -34,7 +38,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         await query.answer()
     except Exception:
-        pass  # Query expired, ignore, continue processing
+        pass
 
     original_text = query.message.text
     draft_text = original_text.replace("📝 Draft:\n\n", "").strip()
@@ -45,8 +49,16 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await query.edit_message_text("✅ Published to LinkedIn.")
         else:
             await query.edit_message_text(f"❌ Failed:\n{msg}")
+
     elif query.data == "reject":
         await query.edit_message_text("🗑 Discarded.")
+
+    elif query.data == "regenerate":
+        await query.edit_message_text("🔄 Generating a new draft...")
+        subprocess.Popen(
+            [sys.executable, "generate_draft.py"],
+            cwd=r"C:\Users\mayan\OneDrive\Desktop\Linkedin Postopia",
+        )
 
 def main():
     app = ApplicationBuilder().token(TELEGRAM_BOT_TOKEN).build()
